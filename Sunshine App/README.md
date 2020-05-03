@@ -59,3 +59,16 @@ as a part of Android Developer Nanodegree by Google.
         3. Changed adapter's constructor to accept an object of this interface as a parameter.
         4. ViewHolder now implements View.OnClickListener interface to pass the information from an  
             item with specific position back to activity.
+            
+4. Intens
+    * Create a new DetailActivity and declare it as a child of a MainActivity.  
+        Use explicit intent to redirect the user to a DetailActivity.  
+        Use implicit intent to open a map.  
+        Use ShareCompat Intent builder to create a Forecast intent for sharing with other apps.  
+    &nbsp;
+        
+    1. Created a new DetailActivity and declared it in the manifest as a child of the MainActivity.
+    2. Redirected the user to a newly created activity using intent when the user clicks on an item in the list.
+    3. Changed the menu inside the MainActivity to show the map location. Created an intent to do that.
+    4. Create a menu for detail activity with a share button and used ShareCompat Intent builder to create  
+        a Forecast intent for sharing with other apps.
