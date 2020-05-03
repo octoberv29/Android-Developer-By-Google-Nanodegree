@@ -72,3 +72,23 @@ as a part of Android Developer Nanodegree by Google.
     3. Changed the menu inside the MainActivity to show the map location. Created an intent to do that.
     4. Create a menu for detail activity with a share button and used ShareCompat Intent builder to create  
         a Forecast intent for sharing with other apps.
+        
+5. Lifecycle
+    * Replace AsyncTask by AsyncTaskLoader.  
+        AsyncTaskLoader prevents duplication of background threads and eliminates duplication of zombie activities  
+        during screen rotation and similar Activity configuration changes, because it caches data and  
+        behaves within the lifecycles of Fragments and Activities.  
+    &nbsp;
+           
+    1. Implemented LoaderManager.LoaderCallbacks inside the MainActivity.    
+    2. Created a unique Loader ID and filled-in loader callbacks:
+        1. Within onCreateLoader, returned a new AsyncTaskLoader that looks a lot like the existing FetchWeatherTask.  
+            Inside AsyncTask:
+            1. Cached the weather data in a member variable and delivered it in onStartLoading().
+            2. LoadInBackground() - the same as doInBackground() method of AsyncTask, i.e. do the background task (fetch the data from the server).
+        2. Updated the UI inside onLoadFinished() - the same as onPostExecute() of FetchWeatherTask.
+        3. Implemented onLoaderReset(), because it's required, but left it blank.
+    3. Refactored the code:
+        1. Refactored refresh functionality to work with AsyncTaskLoader.
+        2. Replaced calls to an AsyncTask by initialising Loader on Loader Manager.
+        3. Deleted previous AsyncTask (FetchWeatherTask).
