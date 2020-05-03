@@ -33,7 +33,7 @@ import com.example.android.sunshine.utilities.OpenWeatherJsonUtils;
 
 import java.net.URL;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity  {
 
     // COMPLETED (33) Delete mWeatherTextView
     // COMPLETED (34) Add a private RecyclerView variable called mRecyclerView
