@@ -115,3 +115,18 @@ as a part of Android Developer Nanodegree by Google.
     3. Updated the UI according to preference file (inside the MainActivity):
         1. Implemented OnSharedPreferenceChangeListener to triger and apply all changes happened to the preference file.      
         2. Added all of the required changes to the SunshinePreferences class to get the location and units.
+        
+7. Database Creation
+    * Save data using SQLite database. For that, define a schema and contract.  
+        Create a database using an SQLiteOpenHelper.
+    &nbsp;
+
+    1. Defined a schema and contract:
+        1. Defined WeatherContract class.
+        2. Created an inner class WeatherEntry that implements the BaseColumns interface (one class per one table).
+        3. Inside created static final members for the table name and each of the db columns.
+    2. Created a database using an SQLiteOpenHelper:
+        1. Created a subclass WeatherDbHelper that extends from SQLiteOpenHelper. 
+        2. Defined constants for database name and version.
+        3. Created a constructor that takes a context and calls the parent constructor.
+        4. Overrode onCreate() and onUpgrade() methods to create/update db.
