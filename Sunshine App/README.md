@@ -92,3 +92,26 @@ as a part of Android Developer Nanodegree by Google.
         1. Refactored refresh functionality to work with AsyncTaskLoader.
         2. Replaced calls to an AsyncTask by initialising Loader on Loader Manager.
         3. Deleted previous AsyncTask (FetchWeatherTask).
+        
+6. Preferences
+    * Add SharedPreference for units (metric, imperial) and location.
+    &nbsp;
+    
+    1. Created SettingsActivity:
+        1. Created SettingsActivity (+xml), enabled back arrow functionality.
+        2. Added a settings option to the main and detail menus, 
+        3. Enabled redirecting from settings action to a Settings Activity.
+    2. Created SettingsFragment:
+        1. Added a library dependency.
+        2. Created an xml resource directory with an xml file PreferenceScreen that has  
+            an EditTextPreference and ListPreference.
+        3. Created SettingsFragment that extends PreferenceFragmentCompat, and  
+            inside onCreatePreferences() use the addPreferencesFromResource() method to inflate that xml file.
+        4. Added a theme for the preferences.    
+        5. Set the root layout of activity_settings to the newly created SettingsFragment.
+        6. Set the preference summary on each preference that isn't a CheckBoxPreference  
+            to show the current state of each preference (inside the SettingsFragment).
+        7. Registered and unregistered the OnSharedPreferenceChangeListener.
+    3. Updated the UI according to preference file (inside the MainActivity):
+        1. Implemented OnSharedPreferenceChangeListener to triger and apply all changes happened to the preference file.      
+        2. Added all of the required changes to the SunshinePreferences class to get the location and units.
