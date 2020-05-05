@@ -94,7 +94,7 @@ as a part of Android Developer Nanodegree by Google.
         3. Deleted previous AsyncTask (FetchWeatherTask).
         
 6. Preferences
-    * Add SharedPreference for units (metric, imperial) and location.
+    * Add SharedPreference for units (metric, imperial) and location so that the user can change them.
     &nbsp;
     
     1. Created SettingsActivity:
@@ -117,8 +117,8 @@ as a part of Android Developer Nanodegree by Google.
         2. Added all of the required changes to the SunshinePreferences class to get the location and units.
         
 7. Database Creation
-    * Save data using SQLite database. For that, define a schema and contract.  
-        Create a database using an SQLiteOpenHelper.
+    * Save data using SQLite database to cache weather forecast on a phone. 
+        For that, define a schema and contract. Also, create a database using an SQLiteOpenHelper.
     &nbsp;
 
     1. Defined a schema and contract:
@@ -130,3 +130,29 @@ as a part of Android Developer Nanodegree by Google.
         2. Defined constants for database name and version.
         3. Created a constructor that takes a context and calls the parent constructor.
         4. Overrode onCreate() and onUpgrade() methods to create/update db.
+        
+8. Content Providers
+    * Add Content Provider to access the cached data stored in a local database.  
+        Replace AsyncTaskLoader by Cursor Loader inside MainActivity to take the data from  
+        a local database through Content Provider's methods using ContentResolver.  
+        For now, use fake data instead of downloading it from the web.  
+        Update MainActivity and ForecastAdapter to use cursor and delete OnSharedPreferenceChangeListener.
+        Update DetailActivity to show details in separate TextViews instead of one summary.
+    &nbsp;
+    
+    1. Content Provider and Cursor Loader:    
+        1. Created a WeatherProvider class by subclassing a ContentProvider and added it to the Manifest file.
+        2. Added URIs to the Contract class, which apps/components will use to contact the content provider.
+        3. Added UriMatcher to the ContentProvider to match given URIs to integer codes while doing operations on db.
+        4. Overrode ContentProvider methods: bulkInsert(), insert(), query(), update(), delete().
+        5. Added ContentResolver to interact with the ContentProvider instead of directly interacting with a db.
+    2. MainActivity:    
+        1. Updated ForecastAdapter to use cursor instead of String data.
+        2. Replaced AsyncTaskLoader by CursorLoader in MainActivity.
+        3. Eliminated all of the code of OnSharedPreferenceChangeListener in MainActivity.
+    3. DetailActivity:
+        1. Updated activity_detail.xml to display all of the data in a separate TextViews.
+        2. Modified DetailActivity to show all of the data and added CursorLoader to show this data.
+        3. Changed Item Click Listener Interface inside ForecastAdapter to accept long date.
+        4. Changed implementation of this interface inside MainActivity so that now it sends Uri of  
+            a specific weather to a DetailActivity when click event occurs.

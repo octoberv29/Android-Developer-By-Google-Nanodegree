@@ -16,14 +16,13 @@
 package com.example.android.sunshine;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.LoaderManager.LoaderCallbacks;
-import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -32,37 +31,48 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import com.example.android.sunshine.data.SunshinePreferences;
-import com.example.android.sunshine.utilities.NetworkUtils;
-import com.example.android.sunshine.utilities.OpenWeatherJsonUtils;
+import com.example.android.sunshine.data.WeatherContract.WeatherEntry;
+import com.example.android.sunshine.utilities.FakeDataUtils;
 
-import java.net.URL;
 
 public class MainActivity extends AppCompatActivity implements
         ForecastAdapter.ForecastAdapterOnClickHandler,
-        LoaderCallbacks<String[]>,
-        SharedPreferences.OnSharedPreferenceChangeListener {
+        LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
+    // The columns of data that we are interested in displaying within our MainActivity's list of weather data.
+    public static final String[] MAIN_FORECAST_PROJECTION = {
+            WeatherEntry.COLUMN_DATE,
+            WeatherEntry.COLUMN_MAX_TEMP,
+            WeatherEntry.COLUMN_MIN_TEMP,
+            WeatherEntry.COLUMN_WEATHER_ID,
+    };
+    // The indices of the values in the array of Strings above.
+    public static final int INDEX_WEATHER_DATE = 0;
+    public static final int INDEX_WEATHER_MAX_TEMP = 1;
+    public static final int INDEX_WEATHER_MIN_TEMP = 2;
+    public static final int INDEX_WEATHER_CONDITION_ID = 3;
+
     private RecyclerView mRecyclerView;
     private ForecastAdapter mForecastAdapter;
-
-    private TextView mErrorMessageDisplay;
     private ProgressBar mLoadingIndicator;
 
-    private static final int FORECAST_LOADER_ID = 0;
+    private int mPosition = RecyclerView.NO_POSITION;
 
-    private static boolean PREFERENCES_HAVE_BEEN_UPDATED = false;
+    private static final int ID_FORECAST_LOADER = 44;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_forecast);
+        getSupportActionBar().setElevation(0f);
 
-        mErrorMessageDisplay = (TextView) findViewById(R.id.tv_error_message_display);
+        FakeDataUtils.insertFakeData(this);
+
         mLoadingIndicator = (ProgressBar) findViewById(R.id.pb_loading_indicator);
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_forecast);
@@ -70,132 +80,125 @@ public class MainActivity extends AppCompatActivity implements
         mRecyclerView.setLayoutManager(layoutManager);
         mRecyclerView.setHasFixedSize(true); // use this setting to improve performance if you know that changes in content do not change the child layout size in the RecyclerView
 
-        mForecastAdapter = new ForecastAdapter(this);
+        mForecastAdapter = new ForecastAdapter(this, this);
         mRecyclerView.setAdapter(mForecastAdapter);
 
-        getSupportLoaderManager().initLoader(FORECAST_LOADER_ID, null, MainActivity.this);
+        showLoading();
 
-        Log.d(TAG, "onCreate: registering preference changed listener");
-
-        // Register MainActivity as an OnPreferenceChangedListener to receive a callback when a SharedPreference has changed.
-        PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
+        getSupportLoaderManager().initLoader(ID_FORECAST_LOADER, null, MainActivity.this);
     }
 
     // Handle RecyclerView item clicks
     @Override
-    public void onClick(String weatherForDay) {
-        Intent intentToStartDetailActivity = new Intent(this, DetailActivity.class);
-        intentToStartDetailActivity.putExtra(Intent.EXTRA_TEXT, weatherForDay);
-        startActivity(intentToStartDetailActivity);
+    public void onClick(long date) {
+        Intent weatherDetailIntent = new Intent(MainActivity.this, DetailActivity.class);
+        Uri uriForDateClicked = WeatherEntry.buildWeatherUriWithDate(date);
+        weatherDetailIntent.setData(uriForDateClicked);
+        startActivity(weatherDetailIntent);
     }
 
-    // Hide the error message and show the data
+    // Hide the loading indicator and show the data
     private void showWeatherDataView() {
-        mErrorMessageDisplay.setVisibility(View.INVISIBLE); // make sure the error is invisible
+        mLoadingIndicator.setVisibility(View.INVISIBLE); // hide the loading indicator data
         mRecyclerView.setVisibility(View.VISIBLE); // make sure the weather data is visible
     }
 
-    // Hide the data and show the error
-    private void showErrorMessage() {
-        mRecyclerView.setVisibility(View.INVISIBLE); // hide the currently visible data
-        mErrorMessageDisplay.setVisibility(View.VISIBLE); // show the error
+    // Hide the data and show the loading indicator
+    private void showLoading() {
+        mRecyclerView.setVisibility(View.INVISIBLE);
+        mLoadingIndicator.setVisibility(View.VISIBLE);
     }
 
-    /* --- Loader Callbacks --- */
+    /* --- Cursor Loader Callbacks --- */
 
     @Override
-    public Loader<String[]> onCreateLoader(int id, final Bundle loaderArgs) {
+    public Loader<Cursor> onCreateLoader(int loaderId, final Bundle loaderArgs) {
 
-        return new AsyncTaskLoader<String[]>(this) {
+//        return new AsyncTaskLoader<String[]>(this) {
+//
+//            // This String array will hold and help cache our weather data
+//            String[] mWeatherData = null;
+//
+//            @Override
+//            protected void onStartLoading() {
+//                if (mWeatherData != null) {
+//                    deliverResult(mWeatherData);
+//                } else {
+//                    mLoadingIndicator.setVisibility(View.VISIBLE);
+//                    forceLoad();
+//                }
+//            }
+//
+//            @Override
+//            public String[] loadInBackground() {
+//
+//                String locationQuery = SunshinePreferences
+//                        .getPreferredWeatherLocation(MainActivity.this);
+//
+//                URL weatherRequestUrl = NetworkUtils.buildUrl(locationQuery);
+//
+//                try {
+//                    String jsonWeatherResponse = NetworkUtils
+//                            .getResponseFromHttpUrl(weatherRequestUrl);
+//
+//                    String[] simpleJsonWeatherData = OpenWeatherJsonUtils
+//                            .getSimpleWeatherStringsFromJson(MainActivity.this, jsonWeatherResponse);
+//
+//                    return simpleJsonWeatherData;
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                    return null;
+//                }
+//            }
+//
+//            // Sends the result of the load to the registered listener.
+//            public void deliverResult(String[] data) {
+//                mWeatherData = data;
+//                super.deliverResult(data);
+//            }
+//        };
 
-            // This String array will hold and help cache our weather data
-            String[] mWeatherData = null;
+        switch (loaderId) {
 
-            @Override
-            protected void onStartLoading() {
-                if (mWeatherData != null) {
-                    deliverResult(mWeatherData);
-                } else {
-                    mLoadingIndicator.setVisibility(View.VISIBLE);
-                    forceLoad();
-                }
-            }
+            case ID_FORECAST_LOADER:
+                return new CursorLoader(this,
+                        WeatherEntry.CONTENT_URI,  /* URI for all rows of weather data in our weather table */
+                        MAIN_FORECAST_PROJECTION,
+                        WeatherEntry.getSqlSelectForTodayOnwards(), /* Selection: all weather data from today onwards */
+                        null,
+                        WeatherEntry.COLUMN_DATE + " ASC"
+                );
 
-            @Override
-            public String[] loadInBackground() {
-
-                String locationQuery = SunshinePreferences
-                        .getPreferredWeatherLocation(MainActivity.this);
-
-                URL weatherRequestUrl = NetworkUtils.buildUrl(locationQuery);
-
-                try {
-                    String jsonWeatherResponse = NetworkUtils
-                            .getResponseFromHttpUrl(weatherRequestUrl);
-
-                    String[] simpleJsonWeatherData = OpenWeatherJsonUtils
-                            .getSimpleWeatherStringsFromJson(MainActivity.this, jsonWeatherResponse);
-
-                    return simpleJsonWeatherData;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            }
-
-            // Sends the result of the load to the registered listener.
-            public void deliverResult(String[] data) {
-                mWeatherData = data;
-                super.deliverResult(data);
-            }
-        };
+            default:
+                throw new RuntimeException("Loader Not Implemented: " + loaderId);
+        }
     }
 
     @Override
-    public void onLoadFinished(Loader<String[]> loader, String[] data) {
-        mLoadingIndicator.setVisibility(View.INVISIBLE);
-        mForecastAdapter.setWeatherData(data);
-        if (null == data) {
-            showErrorMessage();
-        } else {
+    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+        mForecastAdapter.swapCursor(cursor);
+        if (mPosition == RecyclerView.NO_POSITION) {
+            mPosition = 0;
+        }
+        mRecyclerView.smoothScrollToPosition(mPosition);
+        if (cursor.getCount() != 0) {
             showWeatherDataView();
         }
     }
 
     @Override
-    public void onLoaderReset(Loader<String[]> loader) { }
-
-    /* --- Activity lifecycle callbacks --- */
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        /*
-         * This isn't the ideal solution because there really isn't a need to perform another
-         * GET request just to change the units, but this is the simplest solution that gets the
-         * job done for now. Later in this course, we are going to show you more elegant ways to
-         * handle converting the units from celsius to fahrenheit and back without hitting the
-         * network again by keeping a copy of the data in a manageable format.
-         */
-        // if preferences have been changed, refresh the data and set the flag to false
-        if (PREFERENCES_HAVE_BEEN_UPDATED) {
-            Log.d(TAG, "onStart: preferences were updated");
-            getSupportLoaderManager().restartLoader(FORECAST_LOADER_ID, null, this);
-            PREFERENCES_HAVE_BEEN_UPDATED = false;
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
+    public void onLoaderReset(Loader<Cursor> loader) {
+        // Since this Loader's data is now invalid, we need to clear the Adapter that is displaying the data.
+        mForecastAdapter.swapCursor(null);
     }
 
     /* --- Action Bar methods --- */
 
-    private void openLocationInMap() {
-        String addressString = SunshinePreferences.getPreferredWeatherLocation(this);
-        Uri geoLocation = Uri.parse("geo:0,0?q=" + addressString);
+    private void openPreferredLocationInMap() {
+        double[] coordinates = SunshinePreferences.getLocationCoordinates(this);
+        String posLat = Double.toString(coordinates[0]);
+        String posLong = Double.toString(coordinates[1]);
+        Uri geoLocation = Uri.parse("geo:" + posLat + "," + posLong);
 
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(geoLocation);
@@ -218,14 +221,8 @@ public class MainActivity extends AppCompatActivity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.action_refresh) {
-            mForecastAdapter.setWeatherData(null);
-            getSupportLoaderManager().restartLoader(FORECAST_LOADER_ID, null, this);
-            return true;
-        }
-
         if (id == R.id.action_map) {
-            openLocationInMap();
+            openPreferredLocationInMap();
             return true;
         }
 
@@ -236,13 +233,5 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    /* ---  SharedPreferences.OnSharedPreferenceChangeListener --- */
-
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
-        // Set this flag to true so that when control returns to MainActivity, it can refresh the data.
-        PREFERENCES_HAVE_BEEN_UPDATED = true;
     }
 }
