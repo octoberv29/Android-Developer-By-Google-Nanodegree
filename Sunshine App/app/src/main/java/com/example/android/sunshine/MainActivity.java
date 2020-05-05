@@ -34,7 +34,7 @@ import android.widget.ProgressBar;
 
 import com.example.android.sunshine.data.SunshinePreferences;
 import com.example.android.sunshine.data.WeatherContract.WeatherEntry;
-import com.example.android.sunshine.utilities.FakeDataUtils;
+import com.example.android.sunshine.sync.SunshineSyncUtils;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -71,8 +71,6 @@ public class MainActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_forecast);
         getSupportActionBar().setElevation(0f);
 
-        FakeDataUtils.insertFakeData(this);
-
         mLoadingIndicator = (ProgressBar) findViewById(R.id.pb_loading_indicator);
 
         mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_forecast);
@@ -86,6 +84,8 @@ public class MainActivity extends AppCompatActivity implements
         showLoading();
 
         getSupportLoaderManager().initLoader(ID_FORECAST_LOADER, null, MainActivity.this);
+
+        SunshineSyncUtils.initialize(this);
     }
 
     // Handle RecyclerView item clicks
@@ -113,50 +113,6 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public Loader<Cursor> onCreateLoader(int loaderId, final Bundle loaderArgs) {
-
-//        return new AsyncTaskLoader<String[]>(this) {
-//
-//            // This String array will hold and help cache our weather data
-//            String[] mWeatherData = null;
-//
-//            @Override
-//            protected void onStartLoading() {
-//                if (mWeatherData != null) {
-//                    deliverResult(mWeatherData);
-//                } else {
-//                    mLoadingIndicator.setVisibility(View.VISIBLE);
-//                    forceLoad();
-//                }
-//            }
-//
-//            @Override
-//            public String[] loadInBackground() {
-//
-//                String locationQuery = SunshinePreferences
-//                        .getPreferredWeatherLocation(MainActivity.this);
-//
-//                URL weatherRequestUrl = NetworkUtils.buildUrl(locationQuery);
-//
-//                try {
-//                    String jsonWeatherResponse = NetworkUtils
-//                            .getResponseFromHttpUrl(weatherRequestUrl);
-//
-//                    String[] simpleJsonWeatherData = OpenWeatherJsonUtils
-//                            .getSimpleWeatherStringsFromJson(MainActivity.this, jsonWeatherResponse);
-//
-//                    return simpleJsonWeatherData;
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                    return null;
-//                }
-//            }
-//
-//            // Sends the result of the load to the registered listener.
-//            public void deliverResult(String[] data) {
-//                mWeatherData = data;
-//                super.deliverResult(data);
-//            }
-//        };
 
         switch (loaderId) {
 

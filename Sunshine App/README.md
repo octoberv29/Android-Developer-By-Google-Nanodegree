@@ -156,3 +156,75 @@ as a part of Android Developer Nanodegree by Google.
         3. Changed Item Click Listener Interface inside ForecastAdapter to accept long date.
         4. Changed implementation of this interface inside MainActivity so that now it sends Uri of  
             a specific weather to a DetailActivity when click event occurs.
+            
+9. Background Tasks
+    * The goal is to always get fresh data and display a notification everyday when the weather updates.  
+        To do this, start by setting Sunshine app with a background synchronization IntentService. It will  
+        update database in the background. Then, optimize synchronization process (synchronize only if the  
+        database was never synchronized before). Then, use FirebaseJobDispatcher to run synchronization every 3-4 hours.  
+        And display notification with the updated weather status every 24 hours.  
+    &nbsp;
+            
+    1. Created SunshineSyncTask with just one method syncWeather():
+        1. Put the previous loading weather data logic from AsyncTaskLoader in this method.  
+            (It performs the network request for updated weather, parses the JSON from that request,  
+              and inserts the new weather information into our ContentProvider)
+        2. If the results are valid, it deletes the old weather data and inserts the new data.
+    2. Create and Register SunshineSyncIntentService. 
+        It will handle backgrounding our syncTask. IntentServices are perfect for  
+        one off tasks that need to be handled in the background, so we’ll create one here.  
+        1. Created SunshineSyncIntentService class and set it to extend IntentService.
+        2. Declared this service in Manifest.
+        3. Created a constructor that calls super and passes the name of this class as a string.
+        4. Overrode onHandleIntent to call SunshineSyncTask.syncWeather() to perform the background task.
+    3. Create SunshineSyncUtils. Inside created a startImmediateSync() that will start the IntentService   
+         and force an immediate synchronization when called. It basically get everything wired up.
+    4. Optimizing the synchronization process. It’s best practice to not initialize things more than once,   
+        so for that, we will make sure that startImmediateSync will only get called once when the app starts   
+        and only if the database was empty. inside SunshineSyncUtils class:
+        1. Created a boolean flag called sInitialized. This will be mainly used as a safeguard   
+            to prevent calling the synchronize method more than once.
+        2. Created initialize() that will use that boolean to guarantee that startImmediateSync()  
+            is called only when necessary.
+        3. If flag isn’t set to true, we want to check to see if our ContentProvider is empty,  
+            in case for example the app was just freshly installed and had no data stored yet.  
+            To do this, run a query and get the result count, but do so on a background thread  
+            using an AsyncTask.
+        4.  If the ContentProvider is in fact empty, go ahead and call startImmediateSync.
+    5. Syncing on demand is great, but don’t we want to continuously update the data for our users,   
+        even when the app isn’t in the foreground? Create FirebaseJobDispatcher:
+        1. Added the FirebaseJobDispatcher dependency.
+        2. Created SunshineFirebaseJobService that extends jobdispatcher.JobService.
+        3. Within the Service, overrode onStartJob() and call to our SunshineSyncTask.syncWeather() in the background.
+        4. Once the syncWeather method finishes, called jobFinished, passing the JobParameters argument  
+            from onStartJob as well as a false value to signify that we don’t have any more work to do.
+        5. To clean up any mess that may be caused by the framework cancelling our jobs,  
+            overrode onStopJob, and stop our background thread that was started in onStartJob. 
+        6. Returned true to tell the system, “Yes please, we’d like to be rescheduled to finish that  
+            work that we were doing when you so rudely interrupted us.”
+        7. Declared newly created Service in the Manifest.
+        8. Modified SunshineSyncUtils:
+            1. Added constant values to represent how frequently, and with what timeframe,   
+                we will perform our weather synchronization.
+            2. Created scheduleFirebaseJobDispatcherSync() that builds and dispatchers our Job,  
+                and then call that method from the initialize method (only if the method hasn’t  
+                been previously initialized).
+    6. Notifications:
+        1. Created a constant int identifier for our notification.  
+            This can be used later to access the notification.
+        2. Created an Intent with the proper Uri to start the DetailActivity.
+        3. We want to navigate back to the MainActivity from the DetailActivity if the user   
+            clicks the Notification and then clicks back, so use TaskStackBuilder for that.
+        4. Assigned that intent to the NotificationBuilder object so that when the user clicks   
+            the notification, it is fired off.
+        5. In order to notify the user, we need a reference to the NotificationManager,  
+            so use getSystemService to do so.
+        6. Now that everything is ready, notify the user and also save the time at which we showed   
+            this notification. Notifications are totally super awesome, but we don’t want to annoy  
+            our users with too many of them.
+        7. Created bools.xml under res/values and within it, create a boolean value set to true. 
+        8. Should we notify the user when we sync the data? Within SunshineSyncTask, first check to   
+            see if notifications are enabled at all. If they are, we’ll also need to check to see when   
+            the last time we notified the user was. If it was less than a day ago, it’s better that  
+            we hold off, and just keep our user happy that her weather data is up to date and ready  
+            to be displayed as soon as she wants it!
