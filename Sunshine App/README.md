@@ -234,3 +234,10 @@ as a part of Android Developer Nanodegree by Google.
     1. Updated the forecast_list_item layout and the ForecastAdapterViewHolder that populates these item views.
     2. Added a new layout for Today item in the list and updated the ForecastAdapter to switch between old and new.
     3. Enabled and added Data Binding to DetailActivity, added accessibility elements, such as setContentDescription.
+    
+11. Polishing the UI
+
+    1. Added new Colors, Fonts, and Dimensions.
+    2. Created and applied Styles.
+    3. Added Touch Selectors.
+    4. Added Resource Qualifiers.
