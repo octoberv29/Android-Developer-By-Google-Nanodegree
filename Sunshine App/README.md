@@ -228,3 +228,9 @@ as a part of Android Developer Nanodegree by Google.
             the last time we notified the user was. If it was less than a day ago, it’s better that  
             we hold off, and just keep our user happy that her weather data is up to date and ready  
             to be displayed as soon as she wants it!
+            
+10. Completing the UI
+    
+    1. Updated the forecast_list_item layout and the ForecastAdapterViewHolder that populates these item views.
+    2. Added a new layout for Today item in the list and updated the ForecastAdapter to switch between old and new.
+    3. Enabled and added Data Binding to DetailActivity, added accessibility elements, such as setContentDescription.
