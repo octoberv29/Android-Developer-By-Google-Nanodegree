@@ -42,8 +42,8 @@ import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlacePicker;
 
 public class MainActivity extends AppCompatActivity implements
-        ConnectionCallbacks,
-        OnConnectionFailedListener {
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
 
     // Constants
     public static final String TAG = MainActivity.class.getSimpleName();
@@ -130,8 +130,7 @@ public class MainActivity extends AppCompatActivity implements
         Toast.makeText(this, getString(R.string.location_permissions_granted_message), Toast.LENGTH_LONG).show();
 
         try {
-            PlacePicker.IntentBuilder builder= new PlacePicker.IntentBuilder();
-            Intent i = builder.build(this);
+            Intent i = new PlacePicker.IntentBuilder().build(this);
             startActivityForResult(i, PLACE_PICKER_REQUEST);
         } catch (Exception e) {
             Log.e(TAG, String.format("Exception: %s", e.getMessage()));

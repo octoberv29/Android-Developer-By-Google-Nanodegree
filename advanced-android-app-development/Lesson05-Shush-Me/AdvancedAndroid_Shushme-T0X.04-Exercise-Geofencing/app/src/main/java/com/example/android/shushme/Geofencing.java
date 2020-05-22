@@ -68,10 +68,11 @@ public class Geofencing implements ResultCallback {
     // uses GeofencingRequest.Builder to return a GeofencingRequest object from the Geofence list
 
     private GeofencingRequest getGeofencingRequest() {
-        GeofencingRequest.Builder builder = new GeofencingRequest.Builder();
-        builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
-        builder.addGeofences(mGeofenceList);
-        return builder.build();
+        GeofencingRequest geofencingRequest = new GeofencingRequest.Builder()
+                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                .addGeofences(mGeofenceList)
+                .build();
+        return geofencingRequest;
     }
 
     // COMPLETED (4) Create a GeofenceBroadcastReceiver class that extends BroadcastReceiver and override
